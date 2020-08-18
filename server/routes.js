@@ -1,5 +1,13 @@
 const router = require("express").Router();
-const { delay } = require("./helpers");
+const { MongoClient } = require("mongodb");
+const assert = require("assert");
+
+require("dotenv").config();
+const { MONGO_URI } = process.env;
+const options = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+};
 
 const NUM_OF_ROWS = 8;
 const SEATS_PER_ROW = 12;
@@ -11,6 +19,7 @@ const row = ["A", "B", "C", "D", "E", "F", "G", "H"];
 for (let r = 0; r < row.length; r++) {
   for (let s = 1; s < 13; s++) {
     seats[`${row[r]}-${s}`] = {
+      _id: `${row[r]}-${s}`,
       price: 225,
       isBooked: false,
     };
@@ -18,6 +27,29 @@ for (let r = 0; r < row.length; r++) {
 }
 // ----------------------------------
 //////// HELPERS
+
+const exportSeats = Object.values(seats);
+
+const batchImport = async () => {
+  try {
+    const client = await MongoClient(MONGO_URI, options);
+
+    await client.connect();
+
+    const db = client.db("exercise_1");
+
+    const r = await db.collection("seats").insertMany(exportSeats);
+
+    assert.equal(1, r.insertedCount);
+
+    client.close();
+  } catch ({ message }) {
+    console.log(message);
+  }
+};
+
+batchImport();
+
 const getRowName = (rowIndex) => {
   return String.fromCharCode(65 + rowIndex);
 };
@@ -48,8 +80,6 @@ router.get("/api/seat-availability", async (req, res) => {
     };
   }
 
-  await delay(Math.random() * 3000);
-
   return res.json({
     seats: seats,
     bookedSeats: state.bookedSeats,
@@ -68,8 +98,6 @@ router.post("/api/book-seat", async (req, res) => {
       bookedSeats: randomlyBookSeats(30),
     };
   }
-
-  await delay(Math.random() * 3000);
 
   const isAlreadyBooked = !!state.bookedSeats[seatId];
   if (isAlreadyBooked) {
