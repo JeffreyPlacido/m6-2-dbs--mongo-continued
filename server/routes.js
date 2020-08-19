@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const { MongoClient } = require("mongodb");
 const assert = require("assert");
-const { getSeats } = require("./handlers");
+const { getSeats, getPurchase } = require("./handlers");
 
 require("dotenv").config();
 const { MONGO_URI } = process.env;
@@ -93,45 +93,47 @@ router.get("/api/seat-availability", getSeats);
 
 let lastBookingAttemptSucceeded = false;
 
-router.post("/api/book-seat", async (req, res) => {
-  const { seatId, creditCard, expiration } = req.body;
+router.put("/api/book-seat", getPurchase);
 
-  if (!state) {
-    state = {
-      bookedSeats: randomlyBookSeats(30),
-    };
-  }
+// router.post("/api/book-seat", async (req, res) => {
+//   const { seatId, creditCard, expiration } = req.body;
 
-  const isAlreadyBooked = !!state.bookedSeats[seatId];
-  if (isAlreadyBooked) {
-    return res.status(400).json({
-      message: "This seat has already been booked!",
-    });
-  }
+//   if (!state) {
+//     state = {
+//       bookedSeats: randomlyBookSeats(30),
+//     };
+//   }
 
-  if (!creditCard || !expiration) {
-    return res.status(400).json({
-      status: 400,
-      message: "Please provide credit card information!",
-    });
-  }
+//   const isAlreadyBooked = !!state.bookedSeats[seatId];
+//   if (isAlreadyBooked) {
+//     return res.status(400).json({
+//       message: "This seat has already been booked!",
+//     });
+//   }
 
-  if (lastBookingAttemptSucceeded) {
-    lastBookingAttemptSucceeded = !lastBookingAttemptSucceeded;
+//   if (!creditCard || !expiration) {
+//     return res.status(400).json({
+//       status: 400,
+//       message: "Please provide credit card information!",
+//     });
+//   }
 
-    return res.status(500).json({
-      message: "An unknown error has occurred. Please try your request again.",
-    });
-  }
+//   if (lastBookingAttemptSucceeded) {
+//     lastBookingAttemptSucceeded = !lastBookingAttemptSucceeded;
 
-  lastBookingAttemptSucceeded = !lastBookingAttemptSucceeded;
+//     return res.status(500).json({
+//       message: "An unknown error has occurred. Please try your request again.",
+//     });
+//   }
 
-  state.bookedSeats[seatId] = true;
+//   lastBookingAttemptSucceeded = !lastBookingAttemptSucceeded;
 
-  return res.status(200).json({
-    status: 200,
-    success: true,
-  });
-});
+//   state.bookedSeats[seatId] = true;
+
+//   return res.status(200).json({
+//     status: 200,
+//     success: true,
+//   });
+// });
 
 module.exports = router;
